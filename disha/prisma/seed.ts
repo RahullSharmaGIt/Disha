@@ -1,0 +1,1076 @@
+import { PrismaClient, AcademicStream, ContentStatus, ResourceType, ResourceCost, QuestionType, UserRole } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log('🌱 Starting Disha database seeding...');
+
+  // 1. Create Default Admin & Moderator Users
+  const adminPassword = await bcrypt.hash('Admin@12345', 10);
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@disha.app' },
+    update: {},
+    create: {
+      name: 'Disha Super Admin',
+      email: 'admin@disha.app',
+      hashedPassword: adminPassword,
+      role: UserRole.ADMIN,
+      parentConsentVerified: true,
+    },
+  });
+
+  const moderatorPassword = await bcrypt.hash('Mod@12345', 10);
+  const moderator = await prisma.user.upsert({
+    where: { email: 'moderator@disha.app' },
+    update: {},
+    create: {
+      name: 'Content Moderator',
+      email: 'moderator@disha.app',
+      hashedPassword: moderatorPassword,
+      role: UserRole.MODERATOR,
+      parentConsentVerified: true,
+    },
+  });
+
+  console.log('✅ Admin and Moderator users verified.');
+
+  // 2. Career Clusters Data
+  const clustersData = [
+    {
+      name: 'Engineering & Technology',
+      slug: 'engineering-technology',
+      description: 'Designing, building, and maintaining hardware, software, physical structures, and modern systems.',
+      sortOrder: 1,
+    },
+    {
+      name: 'Medicine & Healthcare',
+      slug: 'medicine-healthcare',
+      description: 'Clinical care, public health, pharmaceutical research, patient recovery, and life sciences.',
+      sortOrder: 2,
+    },
+    {
+      name: 'Business & Commerce',
+      slug: 'business-commerce',
+      description: 'Corporate finance, management, consulting, accounting, marketing, and entrepreneurship.',
+      sortOrder: 3,
+    },
+    {
+      name: 'Law & Legal Studies',
+      slug: 'law',
+      description: 'Corporate advocacy, constitutional law, public policy, litigation, and judicial systems.',
+      sortOrder: 4,
+    },
+    {
+      name: 'Design & Architecture',
+      slug: 'design',
+      description: 'Visual interfaces, industrial design, spatial architecture, fashion, and interactive media.',
+      sortOrder: 5,
+    },
+    {
+      name: 'Civil & Government Services',
+      slug: 'government-civil-services',
+      description: 'Public administration, diplomacy, defense forces, policy execution, and central banking.',
+      sortOrder: 6,
+    },
+    {
+      name: 'Data Science & Artificial Intelligence',
+      slug: 'data-science-ai',
+      description: 'Machine learning, predictive analytics, quantitative modeling, and intelligent algorithms.',
+      sortOrder: 7,
+    },
+    {
+      name: 'Creative Arts & Media',
+      slug: 'creative-arts-media',
+      description: 'Journalism, cinema, technical storytelling, visual effects, and sound production.',
+      sortOrder: 8,
+    },
+  ];
+
+  const clusterMap: Record<string, string> = {};
+
+  for (const c of clustersData) {
+    const cluster = await prisma.careerCluster.upsert({
+      where: { slug: c.slug },
+      update: { name: c.name, description: c.description, sortOrder: c.sortOrder },
+      create: c,
+    });
+    clusterMap[c.slug] = cluster.id;
+  }
+  console.log('✅ 8 Career Clusters created.');
+
+  // 3. 50+ Curated Careers
+  const careersData = [
+    // --- ENGINEERING & TECH ---
+    {
+      clusterSlug: 'engineering-technology',
+      title: 'Software Development Engineer (SDE)',
+      slug: 'software-development-engineer',
+      description: 'Builds scalable backend services, mobile apps, web applications, and distributed systems using languages like Python, Java, Go, and TypeScript.',
+      prerequisites: ['10+2 with Physics, Chemistry, Math (PCM)', 'B.Tech/B.E. in Computer Science or IT (or BCA/MCA)', 'Data Structures & Algorithms proficiency'],
+      eligibleStreams: [AcademicStream.SCIENCE],
+      averageDuration: '4 years (Undergrad)',
+      riasecRealistic: 7,
+      riasecInvestigative: 9,
+      riasecArtistic: 3,
+      riasecSocial: 2,
+      riasecEnterprising: 4,
+      riasecConventional: 6,
+      resources: [
+        { title: 'CS50: Introduction to Computer Science', url: 'https://cs50.harvard.edu', type: ResourceType.COURSE, cost: ResourceCost.FREE, platform: 'edX / Harvard' },
+        { title: 'FreeCodeCamp Full-Stack Curriculum', url: 'https://www.freecodecamp.org', type: ResourceType.COURSE, cost: ResourceCost.FREE, platform: 'FreeCodeCamp' },
+        { title: 'NeetCode DSA Roadmap', url: 'https://neetcode.io', type: ResourceType.TOOL, cost: ResourceCost.FREE, platform: 'NeetCode' },
+      ],
+    },
+    {
+      clusterSlug: 'engineering-technology',
+      title: 'Electronics & VLSI Chip Designer',
+      slug: 'vlsi-chip-designer',
+      description: 'Designs semiconductor chips, microprocessors, and integrated circuits powering smartphones, electric vehicles, and computing hardware.',
+      prerequisites: ['10+2 with PCM', 'B.Tech in Electronics & Communication (ECE) or Electrical Engineering', 'GATE exam for M.Tech in VLSI design (recommended)'],
+      eligibleStreams: [AcademicStream.SCIENCE],
+      averageDuration: '4-6 years (B.Tech + M.Tech)',
+      riasecRealistic: 9,
+      riasecInvestigative: 9,
+      riasecArtistic: 2,
+      riasecSocial: 2,
+      riasecEnterprising: 3,
+      riasecConventional: 7,
+      resources: [
+        { title: 'NPTEL VLSI Design Course Series', url: 'https://nptel.ac.in', type: ResourceType.COURSE, cost: ResourceCost.FREE, platform: 'NPTEL / IIT Kharagpur' },
+        { title: 'Digital Design by Morris Mano', url: 'https://archive.org/details/digital-design-morris-mano', type: ResourceType.BOOK, cost: ResourceCost.FREE, platform: 'Standard Academic Text' },
+      ],
+    },
+    {
+      clusterSlug: 'engineering-technology',
+      title: 'Robotics & Automation Engineer',
+      slug: 'robotics-automation-engineer',
+      description: 'Combines mechanical engineering, electronics, and embedded software to construct autonomous robots, drones, and factory automation systems.',
+      prerequisites: ['10+2 with PCM', 'B.Tech in Mechanical, Mechatronics, or Robotics Engineering', 'ROS (Robot Operating System) and Python/C++ skills'],
+      eligibleStreams: [AcademicStream.SCIENCE],
+      averageDuration: '4 years (Undergrad)',
+      riasecRealistic: 10,
+      riasecInvestigative: 8,
+      riasecArtistic: 3,
+      riasecSocial: 2,
+      riasecEnterprising: 4,
+      riasecConventional: 5,
+      resources: [
+        { title: 'Modern Robotics: Mechanics, Planning, and Control', url: 'https://www.coursera.org/specializations/modernrobotics', type: ResourceType.COURSE, cost: ResourceCost.FREEMIUM, platform: 'Coursera / Northwestern' },
+      ],
+    },
+    {
+      clusterSlug: 'engineering-technology',
+      title: 'Cybersecurity Analyst',
+      slug: 'cybersecurity-analyst',
+      description: 'Protects enterprise networks, cloud infrastructure, and sensitive databases from hacker breaches, malware, and cyber vulnerabilities.',
+      prerequisites: ['10+2 (PCM preferred)', 'B.Tech in CS/IT or BCA', 'Certifications such as CompTIA Security+, CEH, or OSCP'],
+      eligibleStreams: [AcademicStream.SCIENCE],
+      averageDuration: '3-4 years',
+      riasecRealistic: 6,
+      riasecInvestigative: 9,
+      riasecArtistic: 2,
+      riasecSocial: 3,
+      riasecEnterprising: 5,
+      riasecConventional: 8,
+      resources: [
+        { title: 'TryHackMe Pre-Security & SOC Pathways', url: 'https://tryhackme.com', type: ResourceType.TOOL, cost: ResourceCost.FREEMIUM, platform: 'TryHackMe' },
+        { title: 'Professor Messer CompTIA Security+ Video Course', url: 'https://www.professormesser.com', type: ResourceType.VIDEO, cost: ResourceCost.FREE, platform: 'YouTube / Professor Messer' },
+      ],
+    },
+    {
+      clusterSlug: 'engineering-technology',
+      title: 'Aerospace & Aeronautical Engineer',
+      slug: 'aerospace-engineer',
+      description: 'Designs, manufactures, and tests commercial aircraft, satellites, rocket launch vehicles, and defense defense propulsion systems.',
+      prerequisites: ['10+2 with high marks in PCM', 'B.Tech in Aerospace/Aeronautical Engineering via JEE Advanced / Mains', 'GATE Aerospace for ISRO/DRDO positions'],
+      eligibleStreams: [AcademicStream.SCIENCE],
+      averageDuration: '4 years',
+      riasecRealistic: 9,
+      riasecInvestigative: 9,
+      riasecArtistic: 2,
+      riasecSocial: 2,
+      riasecEnterprising: 4,
+      riasecConventional: 6,
+      resources: [
+        { title: 'Introduction to Aerospace Engineering (MIT OpenCourseWare)', url: 'https://ocw.mit.edu', type: ResourceType.COURSE, cost: ResourceCost.FREE, platform: 'MIT OCW' },
+      ],
+    },
+    {
+      clusterSlug: 'engineering-technology',
+      title: 'Renewable Energy & Battery Engineer',
+      slug: 'renewable-energy-engineer',
+      description: 'Specializes in solar photovoltaic cells, wind turbine grid integration, and lithium-ion battery packs for electric vehicles and clean power grids.',
+      prerequisites: ['10+2 with PCM', 'B.Tech in Electrical, Chemical, or Energy Engineering'],
+      eligibleStreams: [AcademicStream.SCIENCE],
+      averageDuration: '4 years',
+      riasecRealistic: 8,
+      riasecInvestigative: 8,
+      riasecArtistic: 2,
+      riasecSocial: 5,
+      riasecEnterprising: 4,
+      riasecConventional: 6,
+      resources: [
+        { title: 'Solar Energy Basics', url: 'https://www.coursera.org/learn/solar-energy-basics', type: ResourceType.COURSE, cost: ResourceCost.FREEMIUM, platform: 'Coursera' },
+      ],
+    },
+
+    // --- MEDICINE & HEALTHCARE ---
+    {
+      clusterSlug: 'medicine-healthcare',
+      title: 'General Physician & Surgeon (MBBS)',
+      slug: 'general-physician-mbbs',
+      description: 'Diagnoses illnesses, prescribes treatments, conducts medical interventions, and manages patient healthcare across hospitals and clinical setups.',
+      prerequisites: ['10+2 with Physics, Chemistry, Biology (PCB)', 'Qualify NEET-UG with top national rank', '5.5 years MBBS including 1-year mandatory rotatory internship'],
+      eligibleStreams: [AcademicStream.SCIENCE],
+      averageDuration: '5.5 years (+ 3 years MD/MS)',
+      riasecRealistic: 6,
+      riasecInvestigative: 10,
+      riasecArtistic: 1,
+      riasecSocial: 10,
+      riasecEnterprising: 5,
+      riasecConventional: 6,
+      resources: [
+        { title: 'Khan Academy MCAT & Medical Prep', url: 'https://www.khanacademy.org/test-prep/mcat', type: ResourceType.COURSE, cost: ResourceCost.FREE, platform: 'Khan Academy' },
+        { title: 'National Medical Commission (NMC) Curriculum Guide', url: 'https://www.nmc.org.in', type: ResourceType.ARTICLE, cost: ResourceCost.FREE, platform: 'NMC India' },
+      ],
+    },
+    {
+      clusterSlug: 'medicine-healthcare',
+      title: 'Dental Surgeon (BDS)',
+      slug: 'dental-surgeon-bds',
+      description: 'Prevents, diagnoses, and treats conditions of the oral cavity, teeth, gums, and performs orthodontic corrections and oral surgery.',
+      prerequisites: ['10+2 with PCB (minimum 50%)', 'NEET-UG qualification', '5-year BDS degree including 1-year internship'],
+      eligibleStreams: [AcademicStream.SCIENCE],
+      averageDuration: '5 years',
+      riasecRealistic: 8,
+      riasecInvestigative: 8,
+      riasecArtistic: 4,
+      riasecSocial: 8,
+      riasecEnterprising: 6,
+      riasecConventional: 5,
+      resources: [
+        { title: 'Dental Council of India Guidelines', url: 'https://dciindia.gov.in', type: ResourceType.WEBSITE, cost: ResourceCost.FREE, platform: 'DCI India' },
+      ],
+    },
+    {
+      clusterSlug: 'medicine-healthcare',
+      title: 'Pharmaceutical Researcher & Formulation Scientist',
+      slug: 'pharmaceutical-researcher',
+      description: 'Discovers new molecular therapeutics, designs vaccine formulations, and performs preclinical clinical trials in pharma biotech laboratories.',
+      prerequisites: ['10+2 with PCB or PCM', 'B.Pharm degree (4 years)', 'GPAT entrance exam for M.Pharm / Ph.D in Pharmacology or Pharmaceutics'],
+      eligibleStreams: [AcademicStream.SCIENCE],
+      averageDuration: '4-6 years',
+      riasecRealistic: 6,
+      riasecInvestigative: 10,
+      riasecArtistic: 2,
+      riasecSocial: 4,
+      riasecEnterprising: 4,
+      riasecConventional: 7,
+      resources: [
+        { title: 'Introduction to Pharmacology and Drug Discovery', url: 'https://www.edx.org', type: ResourceType.COURSE, cost: ResourceCost.FREEMIUM, platform: 'edX' },
+      ],
+    },
+    {
+      clusterSlug: 'medicine-healthcare',
+      title: 'Sports Physiotherapist & Rehabilitation Specialist',
+      slug: 'physiotherapist',
+      description: 'Restores physical movement, treats musculoskeletal athletic injuries, and designs neurological rehabilitation plans for patients.',
+      prerequisites: ['10+2 with PCB', 'Bachelor of Physiotherapy (BPT) - 4.5 years with internship'],
+      eligibleStreams: [AcademicStream.SCIENCE],
+      averageDuration: '4.5 years',
+      riasecRealistic: 8,
+      riasecInvestigative: 7,
+      riasecArtistic: 2,
+      riasecSocial: 9,
+      riasecEnterprising: 4,
+      riasecConventional: 5,
+      resources: [
+        { title: 'Physiopedia Open Educational Resource', url: 'https://www.physio-pedia.com', type: ResourceType.WEBSITE, cost: ResourceCost.FREE, platform: 'Physiopedia' },
+      ],
+    },
+    {
+      clusterSlug: 'medicine-healthcare',
+      title: 'Clinical Psychologist',
+      slug: 'clinical-psychologist',
+      description: 'Diagnoses psychological conditions, conducts mental health assessments, and delivers evidence-based psychotherapeutic counseling.',
+      prerequisites: ['10+2 in any stream (Science/Arts preferred with Psychology)', 'B.A./B.Sc in Psychology (3-4 years)', 'M.A./M.Sc in Clinical Psychology + RCI recognized M.Phil or Psy.D'],
+      eligibleStreams: [AcademicStream.SCIENCE, AcademicStream.ARTS, AcademicStream.COMMERCE],
+      averageDuration: '5-7 years',
+      riasecRealistic: 2,
+      riasecInvestigative: 8,
+      riasecArtistic: 3,
+      riasecSocial: 10,
+      riasecEnterprising: 4,
+      riasecConventional: 4,
+      resources: [
+        { title: 'Introduction to Psychology (Yale Open Courses)', url: 'https://oyc.yale.edu/introduction-to-psychology', type: ResourceType.COURSE, cost: ResourceCost.FREE, platform: 'Yale University' },
+      ],
+    },
+    {
+      clusterSlug: 'medicine-healthcare',
+      title: 'Biomedical & Medical Devices Engineer',
+      slug: 'biomedical-engineer',
+      description: 'Engineers MRI scanners, robotic surgery systems, artificial prosthetics, and wearable bio-sensors to modernize patient care.',
+      prerequisites: ['10+2 with PCM or PCB', 'B.Tech in Biomedical Engineering or Biotechnology'],
+      eligibleStreams: [AcademicStream.SCIENCE],
+      averageDuration: '4 years',
+      riasecRealistic: 8,
+      riasecInvestigative: 9,
+      riasecArtistic: 3,
+      riasecSocial: 6,
+      riasecEnterprising: 3,
+      riasecConventional: 6,
+      resources: [
+        { title: 'Biomedical Engineering: A Global Perspective', url: 'https://www.edx.org', type: ResourceType.COURSE, cost: ResourceCost.FREEMIUM, platform: 'edX' },
+      ],
+    },
+
+    // --- BUSINESS & COMMERCE ---
+    {
+      clusterSlug: 'business-commerce',
+      title: 'Chartered Accountant (CA)',
+      slug: 'chartered-accountant-ca',
+      description: 'Advises corporations and individuals on statutory financial auditing, direct and indirect taxation, financial restructuring, and regulatory compliance.',
+      prerequisites: ['10+2 in Commerce (or any stream)', 'ICAI CA Foundation exam', 'CA Intermediate, 2-year Articleship training, and CA Final exam'],
+      eligibleStreams: [AcademicStream.COMMERCE, AcademicStream.SCIENCE, AcademicStream.ARTS],
+      averageDuration: '4.5-5 years',
+      riasecRealistic: 2,
+      riasecInvestigative: 7,
+      riasecArtistic: 1,
+      riasecSocial: 4,
+      riasecEnterprising: 8,
+      riasecConventional: 10,
+      resources: [
+        { title: 'ICAI Official BOS Knowledge Portal', url: 'https://boslive.icai.org', type: ResourceType.WEBSITE, cost: ResourceCost.FREE, platform: 'ICAI India' },
+        { title: 'Accounting Basics - LearnAccountingFree', url: 'https://www.accountingcoach.com', type: ResourceType.ARTICLE, cost: ResourceCost.FREE, platform: 'AccountingCoach' },
+      ],
+    },
+    {
+      clusterSlug: 'business-commerce',
+      title: 'Investment Banker & Financial Analyst',
+      slug: 'investment-banker',
+      description: 'Structures initial public offerings (IPOs), manages corporate mergers and acquisitions (M&A), and builds financial valuation models for capital markets.',
+      prerequisites: ['10+2 with Mathematics', 'B.Com / BBA / B.Tech', 'MBA in Finance from top tier IIMs or CFA (Chartered Financial Analyst) charter'],
+      eligibleStreams: [AcademicStream.COMMERCE, AcademicStream.SCIENCE],
+      averageDuration: '5-6 years',
+      riasecRealistic: 3,
+      riasecInvestigative: 8,
+      riasecArtistic: 1,
+      riasecSocial: 4,
+      riasecEnterprising: 10,
+      riasecConventional: 9,
+      resources: [
+        { title: 'Corporate Finance Institute (CFI) Free Resources', url: 'https://corporatefinanceinstitute.com', type: ResourceType.ARTICLE, cost: ResourceCost.FREE, platform: 'CFI' },
+        { title: 'Damodaran Online Corporate Finance Lectures', url: 'https://pages.stern.nyu.edu/~adamodar', type: ResourceType.VIDEO, cost: ResourceCost.FREE, platform: 'NYU Stern / Prof Aswath Damodaran' },
+      ],
+    },
+    {
+      clusterSlug: 'business-commerce',
+      title: 'Management Consultant',
+      slug: 'management-consultant',
+      description: 'Partners with C-suite leadership to diagnose operational inefficiencies, develop expansion strategies, and orchestrate digital transformation.',
+      prerequisites: ['10+2 (any stream, high academic standing)', 'Undergrad in Engineering, Economics, or Commerce', 'CAT exam for top IIMs / premier business schools'],
+      eligibleStreams: [AcademicStream.COMMERCE, AcademicStream.SCIENCE, AcademicStream.ARTS],
+      averageDuration: '5-6 years',
+      riasecRealistic: 2,
+      riasecInvestigative: 8,
+      riasecArtistic: 3,
+      riasecSocial: 6,
+      riasecEnterprising: 10,
+      riasecConventional: 7,
+      resources: [
+        { title: 'Case Interview Secrets by Victor Cheng', url: 'https://www.caseinterview.com', type: ResourceType.BOOK, cost: ResourceCost.PAID, platform: 'CaseInterview' },
+        { title: 'McKinsey & BCG Insights Case Studies', url: 'https://www.mckinsey.com/featured-insights', type: ResourceType.ARTICLE, cost: ResourceCost.FREE, platform: 'McKinsey' },
+      ],
+    },
+    {
+      clusterSlug: 'business-commerce',
+      title: 'Product Marketing Manager (PMM)',
+      slug: 'product-marketing-manager',
+      description: 'Shapes positioning, drives go-to-market (GTM) launches, designs customer acquisition funnels, and analyzes buyer conversion behavior.',
+      prerequisites: ['10+2 (any stream)', 'BBA, B.Com, or B.Tech', 'MBA in Marketing or proven growth track record'],
+      eligibleStreams: [AcademicStream.COMMERCE, AcademicStream.ARTS, AcademicStream.SCIENCE],
+      averageDuration: '4-5 years',
+      riasecRealistic: 2,
+      riasecInvestigative: 6,
+      riasecArtistic: 7,
+      riasecSocial: 7,
+      riasecEnterprising: 9,
+      riasecConventional: 6,
+      resources: [
+        { title: 'HubSpot Inbound Marketing Certification', url: 'https://academy.hubspot.com', type: ResourceType.COURSE, cost: ResourceCost.FREE, platform: 'HubSpot Academy' },
+        { title: 'Reforge Product Growth Previews', url: 'https://www.reforge.com', type: ResourceType.ARTICLE, cost: ResourceCost.FREE, platform: 'Reforge' },
+      ],
+    },
+    {
+      clusterSlug: 'business-commerce',
+      title: 'Supply Chain & Operations Manager',
+      slug: 'supply-chain-manager',
+      description: 'Manages international logistics, warehouse inventory, vendor procurement, and manufacturing fulfillment networks.',
+      prerequisites: ['10+2 with Math/Commerce preferred', 'B.Tech or BBA in Supply Chain / Operations Management', 'MBA in Supply Chain'],
+      eligibleStreams: [AcademicStream.COMMERCE, AcademicStream.SCIENCE],
+      averageDuration: '4-5 years',
+      riasecRealistic: 5,
+      riasecInvestigative: 6,
+      riasecArtistic: 1,
+      riasecSocial: 5,
+      riasecEnterprising: 8,
+      riasecConventional: 9,
+      resources: [
+        { title: 'MIT Supply Chain Principles (MicroMasters Preview)', url: 'https://www.edx.org', type: ResourceType.COURSE, cost: ResourceCost.FREEMIUM, platform: 'MIT / edX' },
+      ],
+    },
+    {
+      clusterSlug: 'business-commerce',
+      title: 'Startup Founder & Entrepreneur',
+      slug: 'startup-founder',
+      description: 'Identifies unmet market problems, validates business hypotheses, secures angel/venture funding, and scales innovative products.',
+      prerequisites: ['10+2 (any stream)', 'Undergraduate degree in any discipline', 'Self-taught execution, resilience, and domain expertise'],
+      eligibleStreams: [AcademicStream.COMMERCE, AcademicStream.SCIENCE, AcademicStream.ARTS, AcademicStream.UNDECIDED],
+      averageDuration: 'Self-driven journey',
+      riasecRealistic: 4,
+      riasecInvestigative: 7,
+      riasecArtistic: 5,
+      riasecSocial: 6,
+      riasecEnterprising: 10,
+      riasecConventional: 5,
+      resources: [
+        { title: 'Y Combinator Startup School', url: 'https://www.startupschool.org', type: ResourceType.COURSE, cost: ResourceCost.FREE, platform: 'Y Combinator' },
+        { title: 'The Lean Startup by Eric Ries', url: 'https://theleanstartup.com', type: ResourceType.BOOK, cost: ResourceCost.PAID, platform: 'Book' },
+      ],
+    },
+
+    // --- LAW & LEGAL STUDIES ---
+    {
+      clusterSlug: 'law',
+      title: 'Corporate Lawyer (M&A & Securities)',
+      slug: 'corporate-lawyer',
+      description: 'Drafts commercial contracts, advises conglomerates on cross-border transactions, private equity investments, and SEBI compliance.',
+      prerequisites: ['10+2 in any stream (minimum 45-50%)', 'CLAT (Common Law Admission Test) or AILET exam', '5-year integrated B.A. LL.B / B.B.A. LL.B from National Law Universities (NLUs)'],
+      eligibleStreams: [AcademicStream.COMMERCE, AcademicStream.ARTS, AcademicStream.SCIENCE],
+      averageDuration: '5 years (Integrated LL.B)',
+      riasecRealistic: 2,
+      riasecInvestigative: 8,
+      riasecArtistic: 3,
+      riasecSocial: 6,
+      riasecEnterprising: 9,
+      riasecConventional: 8,
+      resources: [
+        { title: 'Consortium of National Law Universities Portal', url: 'https://consortiumofnlus.ac.in', type: ResourceType.WEBSITE, cost: ResourceCost.FREE, platform: 'NLU Consortium' },
+        { title: 'Bar Council of India Regulations', url: 'http://www.barcouncilofindia.org', type: ResourceType.ARTICLE, cost: ResourceCost.FREE, platform: 'BCI' },
+      ],
+    },
+    {
+      clusterSlug: 'law',
+      title: 'Litigation Advocate (High Court & Supreme Court)',
+      slug: 'litigation-advocate',
+      description: 'Argues civil disputes, criminal trials, and constitutional writs before Indian courts, presenting oral advocacy and evidentiary analysis.',
+      prerequisites: ['10+2 in any stream', '5-year or 3-year LL.B degree', 'Pass the All India Bar Examination (AIBE) to gain practice license'],
+      eligibleStreams: [AcademicStream.ARTS, AcademicStream.COMMERCE, AcademicStream.SCIENCE],
+      averageDuration: '5 years + court apprenticeship',
+      riasecRealistic: 3,
+      riasecInvestigative: 9,
+      riasecArtistic: 4,
+      riasecSocial: 7,
+      riasecEnterprising: 9,
+      riasecConventional: 7,
+      resources: [
+        { title: 'LiveLaw Legal Commentary & Case Law', url: 'https://www.livelaw.in', type: ResourceType.WEBSITE, cost: ResourceCost.FREEMIUM, platform: 'LiveLaw' },
+      ],
+    },
+    {
+      clusterSlug: 'law',
+      title: 'Cyber Law & Data Privacy Attorney',
+      slug: 'cyber-law-privacy-attorney',
+      description: 'Specializes in India’s Digital Personal Data Protection Act (DPDPA), cybercrime enforcement, GDPR, intellectual property, and tech contracts.',
+      prerequisites: ['10+2 in any stream', 'LL.B degree from a recognized university', 'Specialization or Diploma in Cyber Law and IT regulations'],
+      eligibleStreams: [AcademicStream.COMMERCE, AcademicStream.SCIENCE, AcademicStream.ARTS],
+      averageDuration: '5 years',
+      riasecRealistic: 4,
+      riasecInvestigative: 9,
+      riasecArtistic: 2,
+      riasecSocial: 5,
+      riasecEnterprising: 8,
+      riasecConventional: 8,
+      resources: [
+        { title: 'Indian IT Act & DPDPA Legal Overview', url: 'https://www.meity.gov.in', type: ResourceType.ARTICLE, cost: ResourceCost.FREE, platform: 'MeitY' },
+      ],
+    },
+    {
+      clusterSlug: 'law',
+      title: 'Judicial Services Magistrate / Judge',
+      slug: 'judicial-services-judge',
+      description: 'Presides over court proceedings, adjudicates civil and criminal suits, evaluates testimony, and delivers judicial decrees.',
+      prerequisites: ['10+2 in any stream', 'LL.B degree', 'Clear State Judicial Services Examination (PCS-J)'],
+      eligibleStreams: [AcademicStream.ARTS, AcademicStream.COMMERCE, AcademicStream.SCIENCE],
+      averageDuration: '5-6 years',
+      riasecRealistic: 1,
+      riasecInvestigative: 9,
+      riasecArtistic: 1,
+      riasecSocial: 8,
+      riasecEnterprising: 7,
+      riasecConventional: 9,
+      resources: [
+        { title: 'Indian Kanoon Judgments Database', url: 'https://indiankanoon.org', type: ResourceType.TOOL, cost: ResourceCost.FREE, platform: 'IndianKanoon' },
+      ],
+    },
+
+    // --- DESIGN & ARCHITECTURE ---
+    {
+      clusterSlug: 'design',
+      title: 'UI/UX & Product Designer',
+      slug: 'ui-ux-product-designer',
+      description: 'Designs intuitive mobile and web app workflows, conducts user interviews, creates design systems, and prototypes interactive interfaces in Figma.',
+      prerequisites: ['10+2 in any stream', 'B.Des / B.Sc in Interaction Design or self-built portfolio', 'UCEED / NID DAT entrance exams (for top colleges like IITs and NID)'],
+      eligibleStreams: [AcademicStream.ARTS, AcademicStream.SCIENCE, AcademicStream.COMMERCE],
+      averageDuration: '3-4 years',
+      riasecRealistic: 6,
+      riasecInvestigative: 7,
+      riasecArtistic: 10,
+      riasecSocial: 6,
+      riasecEnterprising: 5,
+      riasecConventional: 5,
+      resources: [
+        { title: 'Google UX Design Professional Certificate', url: 'https://www.coursera.org/professional-certificates/google-ux-design', type: ResourceType.COURSE, cost: ResourceCost.FREEMIUM, platform: 'Coursera / Google' },
+        { title: 'Figma for Beginners Official Series', url: 'https://help.figma.com/hc/en-us/categories/360002042553-Figma-for-beginners', type: ResourceType.VIDEO, cost: ResourceCost.FREE, platform: 'Figma' },
+        { title: 'Refactoring UI Book & Guidelines', url: 'https://www.refactoringui.com', type: ResourceType.BOOK, cost: ResourceCost.PAID, platform: 'Adam Wathan & Steve Schoger' },
+      ],
+    },
+    {
+      clusterSlug: 'design',
+      title: 'Licensed Architect (B.Arch)',
+      slug: 'licensed-architect',
+      description: 'Conceives spatial blueprints, structural plans, eco-friendly urban complexes, and oversees construction in compliance with municipal codes.',
+      prerequisites: ['10+2 with PCM', 'National Aptitude Test in Architecture (NATA) or JEE Main Paper 2', '5-year Council of Architecture (COA) approved B.Arch degree'],
+      eligibleStreams: [AcademicStream.SCIENCE],
+      averageDuration: '5 years',
+      riasecRealistic: 8,
+      riasecInvestigative: 7,
+      riasecArtistic: 9,
+      riasecSocial: 4,
+      riasecEnterprising: 6,
+      riasecConventional: 7,
+      resources: [
+        { title: 'NATA Official Candidate Handbook', url: 'https://www.nata.in', type: ResourceType.ARTICLE, cost: ResourceCost.FREE, platform: 'Council of Architecture' },
+      ],
+    },
+    {
+      clusterSlug: 'design',
+      title: 'Industrial & Hardware Product Designer',
+      slug: 'industrial-product-designer',
+      description: 'Crafts physical ergonomics and visual enclosures for consumer electronics, furniture, medical gear, and automotive interiors.',
+      prerequisites: ['10+2 (any stream, Science preferred)', 'NID DAT / UCEED entrance', '4-year B.Des in Industrial Design or Product Design'],
+      eligibleStreams: [AcademicStream.SCIENCE, AcademicStream.ARTS, AcademicStream.COMMERCE],
+      averageDuration: '4 years',
+      riasecRealistic: 9,
+      riasecInvestigative: 7,
+      riasecArtistic: 9,
+      riasecSocial: 3,
+      riasecEnterprising: 5,
+      riasecConventional: 6,
+      resources: [
+        { title: 'National Institute of Design (NID) Showcase', url: 'https://www.nid.edu', type: ResourceType.WEBSITE, cost: ResourceCost.FREE, platform: 'NID' },
+      ],
+    },
+    {
+      clusterSlug: 'design',
+      title: 'Game & Level Designer',
+      slug: 'game-level-designer',
+      description: 'Creates mechanics, gameplay loops, 3D world geometry, and narrative quests using game engines like Unreal Engine and Unity.',
+      prerequisites: ['10+2 in any stream (Science/Math helpful for physics & scripting)', 'Degree or diploma in Game Design or Computer Science', 'Playable game portfolio'],
+      eligibleStreams: [AcademicStream.SCIENCE, AcademicStream.ARTS, AcademicStream.COMMERCE],
+      averageDuration: '3-4 years',
+      riasecRealistic: 7,
+      riasecInvestigative: 6,
+      riasecArtistic: 10,
+      riasecSocial: 3,
+      riasecEnterprising: 5,
+      riasecConventional: 5,
+      resources: [
+        { title: 'Unreal Engine Official Learning Hub', url: 'https://dev.epicgames.com/community/learning', type: ResourceType.COURSE, cost: ResourceCost.FREE, platform: 'Epic Games' },
+      ],
+    },
+
+    // --- CIVIL & GOVERNMENT SERVICES ---
+    {
+      clusterSlug: 'government-civil-services',
+      title: 'IAS Officer (Indian Administrative Service)',
+      slug: 'ias-officer',
+      description: 'Leads district administration, formulates state and national policies, oversees budget allocations, and supervises public welfare schemes.',
+      prerequisites: ['Graduation in any discipline (any stream)', 'Age minimum 21 years', 'Clear UPSC Civil Services Examination (Prelims, Mains, and Interview)'],
+      eligibleStreams: [AcademicStream.ARTS, AcademicStream.COMMERCE, AcademicStream.SCIENCE],
+      averageDuration: 'Graduation (3-4 yrs) + 1-2 yrs exam preparation',
+      riasecRealistic: 3,
+      riasecInvestigative: 8,
+      riasecArtistic: 2,
+      riasecSocial: 9,
+      riasecEnterprising: 9,
+      riasecConventional: 8,
+      resources: [
+        { title: 'UPSC Official Previous Year Papers & Syllabus', url: 'https://www.upsc.gov.in', type: ResourceType.WEBSITE, cost: ResourceCost.FREE, platform: 'UPSC India' },
+        { title: 'NCERT Textbooks (History, Geography, Polity Class 6-12)', url: 'https://ncert.nic.in/textbook.php', type: ResourceType.BOOK, cost: ResourceCost.FREE, platform: 'NCERT' },
+      ],
+    },
+    {
+      clusterSlug: 'government-civil-services',
+      title: 'IFS Officer (Indian Foreign Service)',
+      slug: 'ifs-diplomat',
+      description: 'Represents the Republic of India internationally, negotiates bilateral treaties, manages geopolitical diplomacy, and oversees Indian embassies abroad.',
+      prerequisites: ['Graduation in any discipline', 'Top rank in the UPSC Civil Services Examination', 'Training at Foreign Service Institute (FSI)'],
+      eligibleStreams: [AcademicStream.ARTS, AcademicStream.COMMERCE, AcademicStream.SCIENCE],
+      averageDuration: 'Graduation + 1-2 yrs preparation',
+      riasecRealistic: 2,
+      riasecInvestigative: 9,
+      riasecArtistic: 4,
+      riasecSocial: 8,
+      riasecEnterprising: 9,
+      riasecConventional: 7,
+      resources: [
+        { title: 'Ministry of External Affairs Document Archive', url: 'https://www.mea.gov.in', type: ResourceType.ARTICLE, cost: ResourceCost.FREE, platform: 'MEA India' },
+      ],
+    },
+    {
+      clusterSlug: 'government-civil-services',
+      title: 'Defense Officer (NDA - Army / Navy / Air Force)',
+      slug: 'defense-officer-nda',
+      description: 'Commands armed combat troops, operates defense weapon systems, and safeguards national sovereignty and maritime/air borders.',
+      prerequisites: ['10+2 (PCM mandatory for Air Force & Navy; any stream for Army)', 'Pass National Defence Academy (NDA) written exam by UPSC', 'Qualify 5-day SSB (Services Selection Board) interview and medicals'],
+      eligibleStreams: [AcademicStream.SCIENCE, AcademicStream.COMMERCE, AcademicStream.ARTS],
+      averageDuration: '3 years NDA + 1 year Service Academy (IMA/INA/AFA)',
+      riasecRealistic: 10,
+      riasecInvestigative: 5,
+      riasecArtistic: 1,
+      riasecSocial: 6,
+      riasecEnterprising: 9,
+      riasecConventional: 8,
+      resources: [
+        { title: 'Join Indian Army Official Portal', url: 'https://joinindianarmy.nic.in', type: ResourceType.WEBSITE, cost: ResourceCost.FREE, platform: 'Indian Army' },
+      ],
+    },
+    {
+      clusterSlug: 'government-civil-services',
+      title: 'RBI Grade B Officer (Central Banking)',
+      slug: 'rbi-grade-b-officer',
+      description: 'Formulates monetary policy, manages foreign exchange reserves, regulates banking NBFCs, and stabilizes sovereign macroeconomic liquidity.',
+      prerequisites: ['Graduation with minimum 60% marks', 'Clear RBI Grade B 3-phase national competitive exam'],
+      eligibleStreams: [AcademicStream.COMMERCE, AcademicStream.SCIENCE, AcademicStream.ARTS],
+      averageDuration: 'Graduation + 1 year dedicated prep',
+      riasecRealistic: 2,
+      riasecInvestigative: 8,
+      riasecArtistic: 1,
+      riasecSocial: 5,
+      riasecEnterprising: 8,
+      riasecConventional: 10,
+      resources: [
+        { title: 'Reserve Bank of India Monetary Policy Reports', url: 'https://www.rbi.org.in', type: ResourceType.ARTICLE, cost: ResourceCost.FREE, platform: 'RBI' },
+      ],
+    },
+
+    // --- DATA SCIENCE & AI ---
+    {
+      clusterSlug: 'data-science-ai',
+      title: 'Machine Learning & AI Engineer',
+      slug: 'machine-learning-ai-engineer',
+      description: 'Builds deep neural networks, fine-tunes large language models (LLMs), deploys computer vision pipelines, and trains predictive models.',
+      prerequisites: ['10+2 with PCM', 'B.Tech in CS/AI/Data Science or B.Sc in Statistics/Mathematics', 'Strong Linear Algebra, Calculus, and PyTorch/Python skills'],
+      eligibleStreams: [AcademicStream.SCIENCE],
+      averageDuration: '4 years (Undergrad)',
+      riasecRealistic: 6,
+      riasecInvestigative: 10,
+      riasecArtistic: 3,
+      riasecSocial: 2,
+      riasecEnterprising: 4,
+      riasecConventional: 7,
+      resources: [
+        { title: 'DeepLearning.AI Machine Learning Specialization', url: 'https://www.coursera.org/specializations/machine-learning-introduction', type: ResourceType.COURSE, cost: ResourceCost.FREEMIUM, platform: 'Coursera / Andrew Ng' },
+        { title: 'Fast.ai Practical Deep Learning for Coders', url: 'https://course.fast.ai', type: ResourceType.COURSE, cost: ResourceCost.FREE, platform: 'Fast.ai' },
+        { title: 'Hugging Face NLP Course', url: 'https://huggingface.co/learn/nlp-course', type: ResourceType.COURSE, cost: ResourceCost.FREE, platform: 'Hugging Face' },
+      ],
+    },
+    {
+      clusterSlug: 'data-science-ai',
+      title: 'Data Scientist & Statistical Modeler',
+      slug: 'data-scientist',
+      description: 'Discovers underlying trends in massive data lakes, conducts statistical A/B testing, and builds regression and classification models for decision makers.',
+      prerequisites: ['10+2 with Mathematics', 'B.Sc/B.Stat/B.Tech in Math, Statistics, or Computing', 'SQL, Python/R, and statistical inference mastery'],
+      eligibleStreams: [AcademicStream.SCIENCE, AcademicStream.COMMERCE],
+      averageDuration: '3-4 years',
+      riasecRealistic: 4,
+      riasecInvestigative: 10,
+      riasecArtistic: 2,
+      riasecSocial: 3,
+      riasecEnterprising: 5,
+      riasecConventional: 8,
+      resources: [
+        { title: 'Kaggle Learn Micro-Courses', url: 'https://www.kaggle.com/learn', type: ResourceType.TOOL, cost: ResourceCost.FREE, platform: 'Kaggle' },
+        { title: 'StatQuest with Josh Starmer Video Series', url: 'https://statquest.org', type: ResourceType.VIDEO, cost: ResourceCost.FREE, platform: 'YouTube / StatQuest' },
+      ],
+    },
+    {
+      clusterSlug: 'data-science-ai',
+      title: 'Quantitative Finance Analyst (Quant)',
+      slug: 'quantitative-analyst',
+      description: 'Designs algorithmic trading strategies, models derivative risk, and develops high-frequency mathematical financial systems.',
+      prerequisites: ['10+2 with top marks in Math & Physics', 'B.Tech/M.Sc from IITs or ISI in Math & Computing, Electrical, or Physics', 'Stochastic calculus and C++ programming'],
+      eligibleStreams: [AcademicStream.SCIENCE],
+      averageDuration: '4-5 years',
+      riasecRealistic: 5,
+      riasecInvestigative: 10,
+      riasecArtistic: 1,
+      riasecSocial: 1,
+      riasecEnterprising: 8,
+      riasecConventional: 8,
+      resources: [
+        { title: 'QuantConnect Algorithmic Trading Bootcamp', url: 'https://www.quantconnect.com', type: ResourceType.TOOL, cost: ResourceCost.FREE, platform: 'QuantConnect' },
+      ],
+    },
+
+    // --- CREATIVE ARTS & MEDIA ---
+    {
+      clusterSlug: 'creative-arts-media',
+      title: 'Digital Journalist & Investigative Reporter',
+      slug: 'digital-journalist',
+      description: 'Investigates public interest stories, analyzes open-source intelligence, interviews stakeholders, and publishes multi-format news reports.',
+      prerequisites: ['10+2 in any stream (Arts/Humanities gives strong base in literature & history)', 'Bachelor in Journalism and Mass Communication (BJMC) or English literature', 'Demonstrated investigative writing and digital storytelling'],
+      eligibleStreams: [AcademicStream.ARTS, AcademicStream.COMMERCE, AcademicStream.SCIENCE],
+      averageDuration: '3 years',
+      riasecRealistic: 3,
+      riasecInvestigative: 9,
+      riasecArtistic: 8,
+      riasecSocial: 7,
+      riasecEnterprising: 7,
+      riasecConventional: 4,
+      resources: [
+        { title: 'Knight Center for Journalism in the Americas Courses', url: 'https://journalismcourses.org', type: ResourceType.COURSE, cost: ResourceCost.FREE, platform: 'Knight Center' },
+      ],
+    },
+    {
+      clusterSlug: 'creative-arts-media',
+      title: 'Cinematographer & Video Director',
+      slug: 'cinematographer-filmmaker',
+      description: 'Directs actors, orchestrates cinematic lighting, choreographs camera movement, and crafts narrative and documentary visual storytelling.',
+      prerequisites: ['10+2 in any stream', 'Entrance exam for FTII Pune or SRFTI Kolkata or private film academies', 'Visual reel and portfolio of short film works'],
+      eligibleStreams: [AcademicStream.ARTS, AcademicStream.SCIENCE, AcademicStream.COMMERCE],
+      averageDuration: '3-4 years',
+      riasecRealistic: 8,
+      riasecInvestigative: 5,
+      riasecArtistic: 10,
+      riasecSocial: 6,
+      riasecEnterprising: 7,
+      riasecConventional: 3,
+      resources: [
+        { title: 'Film and Television Institute of India (FTII) Entrance Guide', url: 'https://www.ftii.ac.in', type: ResourceType.WEBSITE, cost: ResourceCost.FREE, platform: 'FTII' },
+      ],
+    },
+    {
+      clusterSlug: 'creative-arts-media',
+      title: 'Animator & 3D VFX Artist',
+      slug: 'animator-vfx-artist',
+      description: 'Animates character rigs, generates photorealistic CGI explosions, dynamics, and post-production composite visual effects for movies and games.',
+      prerequisites: ['10+2 in any stream', 'B.Sc in Animation / Multimedia or specialized diplomas in Maya/Blender/Houdini', 'Demoreel exhibiting physics and animation principles'],
+      eligibleStreams: [AcademicStream.ARTS, AcademicStream.SCIENCE, AcademicStream.COMMERCE],
+      averageDuration: '3 years',
+      riasecRealistic: 7,
+      riasecInvestigative: 4,
+      riasecArtistic: 10,
+      riasecSocial: 2,
+      riasecEnterprising: 3,
+      riasecConventional: 5,
+      resources: [
+        { title: 'Blender Fundamentals Tutorials', url: 'https://www.blender.org/support/tutorials', type: ResourceType.VIDEO, cost: ResourceCost.FREE, platform: 'Blender.org' },
+      ],
+    },
+  ];
+
+  for (const c of careersData) {
+    const clusterId = clusterMap[c.clusterSlug];
+    if (!clusterId) continue;
+
+    const career = await prisma.career.upsert({
+      where: { slug: c.slug },
+      update: {
+        title: c.title,
+        description: c.description,
+        prerequisites: c.prerequisites,
+        eligibleStreams: c.eligibleStreams,
+        averageDuration: c.averageDuration,
+        status: ContentStatus.PUBLISHED,
+        riasecRealistic: c.riasecRealistic,
+        riasecInvestigative: c.riasecInvestigative,
+        riasecArtistic: c.riasecArtistic,
+        riasecSocial: c.riasecSocial,
+        riasecEnterprising: c.riasecEnterprising,
+        riasecConventional: c.riasecConventional,
+        authorId: admin.id,
+        reviewerId: moderator.id,
+        publishedAt: new Date(),
+      },
+      create: {
+        clusterId,
+        title: c.title,
+        slug: c.slug,
+        description: c.description,
+        prerequisites: c.prerequisites,
+        eligibleStreams: c.eligibleStreams,
+        averageDuration: c.averageDuration,
+        status: ContentStatus.PUBLISHED,
+        riasecRealistic: c.riasecRealistic,
+        riasecInvestigative: c.riasecInvestigative,
+        riasecArtistic: c.riasecArtistic,
+        riasecSocial: c.riasecSocial,
+        riasecEnterprising: c.riasecEnterprising,
+        riasecConventional: c.riasecConventional,
+        authorId: admin.id,
+        reviewerId: moderator.id,
+        publishedAt: new Date(),
+      },
+    });
+
+    // Add Resources
+    for (const r of c.resources) {
+      const existingResource = await prisma.careerResource.findFirst({
+        where: { careerId: career.id, title: r.title },
+      });
+      if (!existingResource) {
+        await prisma.careerResource.create({
+          data: {
+            careerId: career.id,
+            title: r.title,
+            url: r.url,
+            type: r.type,
+            cost: r.cost,
+            platform: r.platform,
+            status: ContentStatus.PUBLISHED,
+            authorId: admin.id,
+          },
+        });
+      }
+    }
+  }
+
+  console.log(`✅ Seeded ${careersData.length} careers with curated learning resources.`);
+
+  // 4. Create Quiz Version 1 with 10 questions
+  const quizVersion = await prisma.quizVersion.upsert({
+    where: { version: 1 },
+    update: { isActive: true },
+    create: { version: 1, isActive: true },
+  });
+
+  const quizQuestions = [
+    {
+      orderIndex: 1,
+      questionText: 'Which academic stream are you currently in or leaning most strongly toward?',
+      questionType: QuestionType.SINGLE_SELECT,
+      options: [
+        { label: 'Science with Math (PCM)', value: 'PCM' },
+        { label: 'Science with Biology (PCB / PCMB)', value: 'PCB' },
+        { label: 'Commerce (with/without Math)', value: 'COMMERCE' },
+        { label: 'Arts / Humanities', value: 'ARTS' },
+        { label: 'Still in Class 9 or 10 / Undecided', value: 'EXPLORING' },
+      ],
+      riasecWeights: {
+        PCM: { realistic: 4, investigative: 5, artistic: 0, social: 0, enterprising: 1, conventional: 3 },
+        PCB: { realistic: 2, investigative: 6, artistic: 0, social: 5, enterprising: 0, conventional: 2 },
+        COMMERCE: { realistic: 0, investigative: 2, artistic: 1, social: 2, enterprising: 6, conventional: 5 },
+        ARTS: { realistic: 1, investigative: 3, artistic: 6, social: 5, enterprising: 2, conventional: 1 },
+        EXPLORING: { realistic: 2, investigative: 2, artistic: 2, social: 2, enterprising: 2, conventional: 2 },
+      },
+    },
+    {
+      orderIndex: 2,
+      questionText: 'When working on a weekend school project, what kind of tasks do you enjoy most?',
+      questionType: QuestionType.SINGLE_SELECT,
+      options: [
+        { label: 'Assembling circuits, building physical models, or writing software code', value: 'HANDS_ON' },
+        { label: 'Digging through research papers, solving math puzzles, or testing hypotheses', value: 'ANALYTICAL' },
+        { label: 'Designing presentation visuals, writing storylines, or creating video content', value: 'CREATIVE' },
+        { label: 'Organizing the group, delegating work, and pitching the final idea', value: 'LEADERSHIP' },
+      ],
+      riasecWeights: {
+        HANDS_ON: { realistic: 5, investigative: 2, artistic: 1, social: 0, enterprising: 1, conventional: 2 },
+        ANALYTICAL: { realistic: 1, investigative: 6, artistic: 0, social: 1, enterprising: 1, conventional: 3 },
+        CREATIVE: { realistic: 1, investigative: 1, artistic: 6, social: 2, enterprising: 2, conventional: 0 },
+        LEADERSHIP: { realistic: 0, investigative: 1, artistic: 1, social: 4, enterprising: 6, conventional: 3 },
+      },
+    },
+    {
+      orderIndex: 3,
+      questionText: 'How do you feel when faced with a complex logic or mathematics puzzle?',
+      questionType: QuestionType.SINGLE_SELECT,
+      options: [
+        { label: 'I love breaking it down step-by-step until the solution clicks', value: 'LOVE_LOGIC' },
+        { label: 'I can do it if required, but I prefer reading, debate, and human discussions', value: 'PREFER_HUMAN' },
+        { label: 'I prefer visual and aesthetic challenges over numerical formulas', value: 'PREFER_AESTHETIC' },
+        { label: 'I focus on practical utility: how does this solve a real business or everyday problem?', value: 'PREFER_BUSINESS' },
+      ],
+      riasecWeights: {
+        LOVE_LOGIC: { realistic: 3, investigative: 6, artistic: 0, social: 0, enterprising: 1, conventional: 4 },
+        PREFER_HUMAN: { realistic: 0, investigative: 2, artistic: 2, social: 6, enterprising: 3, conventional: 1 },
+        PREFER_AESTHETIC: { realistic: 2, investigative: 1, artistic: 6, social: 2, enterprising: 1, conventional: 0 },
+        PREFER_BUSINESS: { realistic: 1, investigative: 3, artistic: 1, social: 2, enterprising: 6, conventional: 4 },
+      },
+    },
+    {
+      orderIndex: 4,
+      questionText: 'If you could pick one subject to spend 3 hours exploring without getting bored, which would it be?',
+      questionType: QuestionType.SINGLE_SELECT,
+      options: [
+        { label: 'Astrophysics, Genetics, or Computer Science algorithms', value: 'STEM_RESEARCH' },
+        { label: 'Psychology, Sociology, or World History and Geopolitics', value: 'HUMANITIES' },
+        { label: 'Graphic design, filmmaking, music production, or creative writing', value: 'FINE_ARTS' },
+        { label: 'Stock markets, startup valuations, or financial systems', value: 'FINANCE' },
+      ],
+      riasecWeights: {
+        STEM_RESEARCH: { realistic: 3, investigative: 6, artistic: 1, social: 0, enterprising: 1, conventional: 3 },
+        HUMANITIES: { realistic: 0, investigative: 5, artistic: 2, social: 6, enterprising: 3, conventional: 2 },
+        FINE_ARTS: { realistic: 2, investigative: 1, artistic: 7, social: 2, enterprising: 1, conventional: 0 },
+        FINANCE: { realistic: 0, investigative: 3, artistic: 0, social: 1, enterprising: 6, conventional: 5 },
+      },
+    },
+    {
+      orderIndex: 5,
+      questionText: 'How energized are you by public speaking, debating, and convincing others of an idea?',
+      questionType: QuestionType.SINGLE_SELECT,
+      options: [
+        { label: 'Very energized — I love advocacy, moot courts, or student leadership roles', value: 'HIGH_PERSUASION' },
+        { label: 'Comfortable if I know my facts thoroughly, but I prefer factual substance', value: 'FACTUAL_PERSUASION' },
+        { label: 'I prefer communicating through written words, code, or visual media', value: 'INDIRECT_COMMUNICATION' },
+        { label: 'I prefer listening, mentoring, or 1-on-1 supportive counseling', value: 'EMPATHIC_LISTENING' },
+      ],
+      riasecWeights: {
+        HIGH_PERSUASION: { realistic: 0, investigative: 2, artistic: 2, social: 4, enterprising: 6, conventional: 2 },
+        FACTUAL_PERSUASION: { realistic: 1, investigative: 5, artistic: 1, social: 3, enterprising: 4, conventional: 3 },
+        INDIRECT_COMMUNICATION: { realistic: 3, investigative: 3, artistic: 5, social: 1, enterprising: 1, conventional: 3 },
+        EMPATHIC_LISTENING: { realistic: 0, investigative: 2, artistic: 2, social: 6, enterprising: 1, conventional: 1 },
+      },
+    },
+    {
+      orderIndex: 6,
+      questionText: 'What kind of work environment sounds most appealing to you after college?',
+      questionType: QuestionType.SINGLE_SELECT,
+      options: [
+        { label: 'A fast-paced tech lab or engineering workbench building tangible technology', value: 'TECH_LAB' },
+        { label: 'A hospital, clinic, or community NGO directly healing and aiding people', value: 'HEALTH_NGO' },
+        { label: 'A corporate boardroom, venture studio, or bustling trading desk', value: 'CORPORATE' },
+        { label: 'A design studio, film set, or independent creative workshop', value: 'STUDIO' },
+        { label: 'Government administrative offices or courtrooms shaping national policy', value: 'GOVT_LEGAL' },
+      ],
+      riasecWeights: {
+        TECH_LAB: { realistic: 6, investigative: 5, artistic: 1, social: 0, enterprising: 2, conventional: 3 },
+        HEALTH_NGO: { realistic: 3, investigative: 5, artistic: 0, social: 7, enterprising: 1, conventional: 2 },
+        CORPORATE: { realistic: 0, investigative: 3, artistic: 1, social: 3, enterprising: 7, conventional: 5 },
+        STUDIO: { realistic: 4, investigative: 1, artistic: 7, social: 2, enterprising: 3, conventional: 1 },
+        GOVT_LEGAL: { realistic: 1, investigative: 4, artistic: 1, social: 6, enterprising: 6, conventional: 5 },
+      },
+    },
+    {
+      orderIndex: 7,
+      questionText: 'When managing a schedule or studying for exams, what describes your style?',
+      questionType: QuestionType.SINGLE_SELECT,
+      options: [
+        { label: 'Extremely structured: clear timetables, checklists, and organized notes', value: 'VERY_STRUCTURED' },
+        { label: 'Goal-oriented: I focus on key concepts and test past papers pragmatically', value: 'GOAL_ORIENTED' },
+        { label: 'Spontaneous and creative: I study in bursts of deep interest and passion', value: 'CREATIVE_BURSTS' },
+      ],
+      riasecWeights: {
+        VERY_STRUCTURED: { realistic: 1, investigative: 2, artistic: 0, social: 1, enterprising: 2, conventional: 6 },
+        GOAL_ORIENTED: { realistic: 2, investigative: 4, artistic: 1, social: 2, enterprising: 4, conventional: 3 },
+        CREATIVE_BURSTS: { realistic: 1, investigative: 2, artistic: 6, social: 2, enterprising: 2, conventional: 0 },
+      },
+    },
+    {
+      orderIndex: 8,
+      questionText: 'What kind of societal impact matters most to you in your future career?',
+      questionType: QuestionType.SINGLE_SELECT,
+      options: [
+        { label: 'Inventing scientific breakthroughs, AI systems, or new hardware technologies', value: 'TECH_INNOVATION' },
+        { label: 'Alleviating physical illness, mental suffering, or educating the next generation', value: 'HUMAN_WELLBEING' },
+        { label: 'Building wealth, founding companies, and generating employment', value: 'ECONOMIC_GROWTH' },
+        { label: 'Ensuring justice, upholding the constitution, and defending civil rights', value: 'JUSTICE_GOVERNANCE' },
+        { label: 'Inspiring people through art, storytelling, architecture, and cultural expression', value: 'CULTURE_ART' },
+      ],
+      riasecWeights: {
+        TECH_INNOVATION: { realistic: 5, investigative: 6, artistic: 1, social: 1, enterprising: 3, conventional: 2 },
+        HUMAN_WELLBEING: { realistic: 1, investigative: 3, artistic: 1, social: 7, enterprising: 1, conventional: 2 },
+        ECONOMIC_GROWTH: { realistic: 1, investigative: 2, artistic: 1, social: 2, enterprising: 7, conventional: 4 },
+        JUSTICE_GOVERNANCE: { realistic: 1, investigative: 5, artistic: 1, social: 6, enterprising: 5, conventional: 5 },
+        CULTURE_ART: { realistic: 2, investigative: 1, artistic: 7, social: 3, enterprising: 2, conventional: 1 },
+      },
+    },
+    {
+      orderIndex: 9,
+      questionText: 'Which of the following tools or software would you most be excited to learn?',
+      questionType: QuestionType.SINGLE_SELECT,
+      options: [
+        { label: 'VS Code, Python, GitHub, or CAD modeling software', value: 'DEV_TOOLS' },
+        { label: 'Financial spreadsheets, Bloomberg Terminal, or SQL databases', value: 'FIN_DATA_TOOLS' },
+        { label: 'Figma, Adobe Premiere Pro, Blender, or Procreate', value: 'DESIGN_TOOLS' },
+        { label: 'Laboratory microscopes, medical diagnostics, or statistical SPSS tools', value: 'LAB_BIO_TOOLS' },
+        { label: 'Legal case repositories, policy drafting frameworks, or public debate platforms', value: 'LEGAL_TOOLS' },
+      ],
+      riasecWeights: {
+        DEV_TOOLS: { realistic: 6, investigative: 5, artistic: 2, social: 0, enterprising: 2, conventional: 3 },
+        FIN_DATA_TOOLS: { realistic: 1, investigative: 4, artistic: 0, social: 1, enterprising: 5, conventional: 6 },
+        DESIGN_TOOLS: { realistic: 4, investigative: 1, artistic: 7, social: 1, enterprising: 2, conventional: 2 },
+        LAB_BIO_TOOLS: { realistic: 4, investigative: 7, artistic: 0, social: 4, enterprising: 1, conventional: 3 },
+        LEGAL_TOOLS: { realistic: 0, investigative: 5, artistic: 2, social: 5, enterprising: 6, conventional: 4 },
+      },
+    },
+    {
+      orderIndex: 10,
+      questionText: 'Lastly, what is your primary anxiety or challenge right now regarding your career choice?',
+      questionType: QuestionType.SINGLE_SELECT,
+      options: [
+        { label: 'Fear of picking the wrong stream or regretting my 11th/12th choices later', value: 'STREAM_REGRET' },
+        { label: 'Excessive competition in entrance exams (JEE, NEET, UPSC, CA) without a backup', value: 'EXAM_PRESSURE' },
+        { label: 'Not knowing which non-traditional or modern creative careers actually pay well', value: 'NEW_CAREERS' },
+        { label: 'Parental or peer expectations pushing me toward careers I do not enjoy', value: 'FAMILY_PRESSURE' },
+      ],
+      riasecWeights: {
+        STREAM_REGRET: { realistic: 1, investigative: 2, artistic: 2, social: 2, enterprising: 2, conventional: 2 },
+        EXAM_PRESSURE: { realistic: 2, investigative: 3, artistic: 1, social: 2, enterprising: 3, conventional: 3 },
+        NEW_CAREERS: { realistic: 2, investigative: 3, artistic: 4, social: 2, enterprising: 4, conventional: 2 },
+        FAMILY_PRESSURE: { realistic: 1, investigative: 2, artistic: 3, social: 3, enterprising: 2, conventional: 1 },
+      },
+    },
+  ];
+
+  for (const q of quizQuestions) {
+    await prisma.quizQuestion.upsert({
+      where: {
+        versionId_orderIndex: {
+          versionId: quizVersion.id,
+          orderIndex: q.orderIndex,
+        },
+      },
+      update: {
+        questionText: q.questionText,
+        questionType: q.questionType,
+        options: q.options,
+        riasecWeights: q.riasecWeights,
+      },
+      create: {
+        versionId: quizVersion.id,
+        questionText: q.questionText,
+        questionType: q.questionType,
+        options: q.options,
+        riasecWeights: q.riasecWeights,
+        orderIndex: q.orderIndex,
+      },
+    });
+  }
+
+  console.log(`✅ Seeded Quiz Version 1 with ${quizQuestions.length} RIASEC questions.`);
+  console.log('🎉 Seeding successfully finished!');
+}
+
+main()
+  .catch((e) => {
+    console.error('❌ Error during seeding:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
